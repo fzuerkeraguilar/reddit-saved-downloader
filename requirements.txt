@@ -1,0 +1,5 @@
+bdfr
+praw
+PySimpleGUI
+Pillow
+requests
