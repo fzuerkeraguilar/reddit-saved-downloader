@@ -47,6 +47,6 @@ class BDRFConnector(object):
         self.thread.join()
         return [e for e in self.downloader.reddit_lists[0] if isinstance(e, Submission)]
 
-    def download_post(self, submission):
+    def download_post(self, submission: Submission):
         self.thread.join()
         self.downloader._download_submission(submission)
