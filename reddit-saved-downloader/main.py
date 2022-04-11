@@ -1,6 +1,4 @@
 import tkinter
-
-from PySimpleGUI import WIN_CLOSED
 from reddit_preview_getter import update_preview
 from bdrf_connector import BDRFConnector
 import PySimpleGUI as sg
@@ -10,14 +8,47 @@ import webbrowser
 
 class GUI:
     def __init__(self):
+        self.download_conf_path: str = ""
+        self.select_download_conf_layout = [
+            [sg.Text("Select download configuration:")],
+            [
+                sg.FileBrowse(
+                    button_text="Select file", file_types=(("JSON files", "*.json"),)
+                )
+            ],
+            [sg.OK(), sg.Cancel()],
+        ]
+        self.select_download_conf_window = sg.Window(
+            "Select download configuration", self.select_download_conf_layout
+        )
+        self.select_download_conf_window.finalize()
+        while True:
+            event, values = self.select_download_conf_window.read()
+            if event == "OK":
+                self.download_conf_path = values["Select file"]
+                break
+            elif event == "Cancel" or event == sg.WIN_CLOSED or event is None:
+                sys.exit(0)
+        self.select_download_conf_window.close()
+
         self.textbox = None
         self.listbox = None
-        self.bdrf_connector = BDRFConnector()
+        try:
+            self.bdrf_connector = BDRFConnector(self.download_conf_path)
+        except:
+            sg.popup_error("Error when connecting to BDRF.")
+            sys.exit(0)
 
         if self.bdrf_connector.oauth2_url:
             login_layout = [
                 [sg.Text("Login through this link")],
-                [sg.Text(self.bdrf_connector.oauth2_url, enable_events=True)],
+                [
+                    sg.Text(
+                        self.bdrf_connector.oauth2_url,
+                        enable_events=True,
+                        font="Courier underline",
+                    )
+                ],
                 [sg.Button("OK", key="OK")],
             ]
             login_window = sg.Window("Login", layout=login_layout)
@@ -30,16 +61,21 @@ class GUI:
                     break
                 elif event is None:
                     sys.exit(0)
-
-        self.posts = self.bdrf_connector.get_saved_posts()
-        self.post_titles = {post: f"{post.id} - {post.title}" for post in self.posts}
+        self.post_titles = {
+            post: f"{post.id} - {post.title}"
+            for post in self.bdrf_connector.saved_posts
+        }
         self.selected_post = 0
 
         self.saved_posts_layout = [
             [
                 sg.Listbox(
                     values=list(self.post_titles.values()),
-                    default_values=[self.post_titles[self.posts[self.selected_post]]],
+                    default_values=[
+                        self.post_titles[
+                            self.bdrf_connector.saved_posts[self.selected_post]
+                        ]
+                    ],
                     size=(60, 20),
                     key="listbox",
                     select_mode=sg.LISTBOX_SELECT_MODE_SINGLE,
@@ -48,7 +84,10 @@ class GUI:
                     bind_return_key=True,
                 )
             ],
-            [sg.InputText(enable_events=True, key="input")],
+            [
+                sg.InputText(enable_events=True, key="input"),
+                sg.FolderBrowse(target="input", key="browse"),
+            ],
         ]
 
         self.preview_layout = [
@@ -79,12 +118,14 @@ class GUI:
         self.listbox.bind("<Down>", self.on_press_down)
         self.listbox.bind("<Up>", self.on_press_up)
         self.listbox.bind("<<ListboxSelect>>", self.on_select)
-        update_preview(self.posts[self.selected_post], self.window["preview"])
+        self.textbox.bind("<Return>", self.on_enter)
+        update_preview(
+            self.bdrf_connector.saved_posts[self.selected_post], self.window["preview"]
+        )
         # ---===--- Loop taking in user input --- #
         while True:
             event, values = self.window.read()
-            print(event, values)
-            if event == WIN_CLOSED or event == "Exit" or event is None:
+            if event == sg.WIN_CLOSED or event == "Exit" or event is None:
                 break
         self.window.close()
 
@@ -95,7 +136,10 @@ class GUI:
             self.listbox.select_set(self.selected_post)
             if self.selected_post % 20 == 0:
                 self.listbox.yview_scroll(20, tkinter.UNITS)
-            update_preview(self.posts[self.selected_post], self.window["preview"])
+            update_preview(
+                self.bdrf_connector.saved_posts[self.selected_post],
+                self.window["preview"],
+            )
 
     def on_press_up(self, event):
         if self.selected_post > 0:
@@ -104,11 +148,25 @@ class GUI:
             self.listbox.select_set(self.selected_post)
             if self.selected_post % 20 == 19:
                 self.listbox.yview_scroll(-20, tkinter.UNITS)
-            update_preview(self.posts[self.selected_post], self.window["preview"])
+            update_preview(
+                self.bdrf_connector.saved_posts[self.selected_post],
+                self.window["preview"],
+            )
 
     def on_select(self, event):
         self.selected_post = event.widget.curselection()[0]
-        update_preview(self.posts[self.selected_post], self.window["preview"])
+        update_preview(
+            self.bdrf_connector.saved_posts[self.selected_post], self.window["preview"]
+        )
+
+    def on_enter(self, event):
+        if self.textbox.get() == "":
+            return
+        else:
+            self.bdrf_connector.download_post(
+                self.bdrf_connector.saved_posts[self.selected_post], self.textbox.get()
+            )
+        self.textbox.delete(0, "end")
 
 
 if __name__ == "__main__":

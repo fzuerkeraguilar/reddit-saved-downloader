@@ -1,5 +1,5 @@
-bdfr
-praw
-PySimpleGUI
-Pillow
-requests
+bdfr~=2.5.2
+praw~=7.5.0
+PySimpleGUI~=4.59.0
+Pillow~=9.1.0
+requests~=2.27.1
