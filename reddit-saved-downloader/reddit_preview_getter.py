@@ -45,4 +45,4 @@ def download_image_from_url(url: str) -> Image:
     if r.ok:
         return Image.open(io.BytesIO(r.content))
     else:
-        return None
+        return Image.new("RGB", (500, 500), color=(255, 255, 255))

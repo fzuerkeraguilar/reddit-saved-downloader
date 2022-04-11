@@ -1,3 +1,5 @@
+import tkinter
+
 from PySimpleGUI import WIN_CLOSED
 from reddit_preview_getter import update_preview
 from bdrf_connector import BDRFConnector
@@ -74,19 +76,15 @@ class GUI:
         self.textbox = self.window["input"].Widget
         self.textbox.bind("<Down>", self.on_press_down)
         self.textbox.bind("<Up>", self.on_press_up)
+        self.listbox.bind("<Down>", self.on_press_down)
+        self.listbox.bind("<Up>", self.on_press_up)
         self.listbox.bind("<<ListboxSelect>>", self.on_select)
         update_preview(self.posts[self.selected_post], self.window["preview"])
         # ---===--- Loop taking in user input --- #
         while True:
             event, values = self.window.read()
             print(event, values)
-            if event == "Down:40":
-                update_preview(self.posts[self.selected_post], self.window["preview"])
-                continue
-            if event == "Up:38":
-                update_preview(self.posts[self.selected_post], self.window["preview"])
-                continue
-            if event == WIN_CLOSED:
+            if event == WIN_CLOSED or event == "Exit" or event is None:
                 break
         self.window.close()
 
@@ -95,12 +93,18 @@ class GUI:
             self.listbox.select_clear(self.selected_post)
             self.selected_post += 1
             self.listbox.select_set(self.selected_post)
+            if self.selected_post % 20 == 0:
+                self.listbox.yview_scroll(20, tkinter.UNITS)
+            update_preview(self.posts[self.selected_post], self.window["preview"])
 
     def on_press_up(self, event):
         if self.selected_post > 0:
             self.listbox.select_clear(self.selected_post)
             self.selected_post -= 1
             self.listbox.select_set(self.selected_post)
+            if self.selected_post % 20 == 19:
+                self.listbox.yview_scroll(-20, tkinter.UNITS)
+            update_preview(self.posts[self.selected_post], self.window["preview"])
 
     def on_select(self, event):
         self.selected_post = event.widget.curselection()[0]
