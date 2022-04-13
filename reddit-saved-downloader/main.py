@@ -58,7 +58,11 @@ class GUI:
                 sg.Button(
                     "Open in browser",
                     key="open_in_browser",
-                )
+                ),
+                sg.Checkbox("Unsave after download", key="unsave-after-download"),
+                sg.Checkbox(
+                    "Remove from list after download", key="remove-after-download"
+                ),
             ],
         ]
 
@@ -157,6 +161,11 @@ class GUI:
             self.thread_list.append(thread)
             if self.window["clear"].get():
                 self.textbox.delete(0, tkinter.END)
+            if self.window["unsave-after-download"].get():
+                self.bdrf_connector.get_saved_posts()[self.selected_post].unsave()
+            if self.window["remove-after-download"].get():
+                self.bdrf_connector.get_saved_posts().pop(self.selected_post)
+                self.listbox.delete(self.selected_post)
 
 
 if __name__ == "__main__":
