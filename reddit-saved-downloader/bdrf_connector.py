@@ -60,6 +60,13 @@ class BDRFConnector(object):
         return self.__saved_posts
 
     def download_post(self, submission: Submission, user_input: str):
+        thread = threading.Thread(
+            target=self.__download_post, args=(submission, user_input)
+        )
+        thread.start()
+        return thread
+
+    def __download_post(self, submission: Submission, user_input: str):
         self.init_downloader_thread.join()
         self.downloader.reddit_lists[0] = [submission]
         if user_input not in self.download_config:

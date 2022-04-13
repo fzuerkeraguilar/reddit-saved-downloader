@@ -1,3 +1,4 @@
+import threading
 import tkinter
 from reddit_preview_getter import update_preview
 from bdrf_connector import BDRFConnector
@@ -12,6 +13,7 @@ class GUI:
         self.listbox = None
         self.bdrf_connector: BDRFConnector = BDRFConnector()
         self.post_titles: list[str] = []
+        self.thread_list: list[threading.Thread] = []
         self.selected_post: int = 0
 
         self.saved_posts_layout = [
@@ -109,6 +111,8 @@ class GUI:
                 )
             if event == sg.WIN_CLOSED or event == "Exit" or event is None:
                 break
+        for thread in self.thread_list:
+            thread.join()
         self.window.close()
 
     def on_press_down(self, event):
@@ -146,10 +150,11 @@ class GUI:
         if self.textbox.get() == "":
             return
         else:
-            self.bdrf_connector.download_post(
+            thread = self.bdrf_connector.download_post(
                 self.bdrf_connector.get_saved_posts()[self.selected_post],
                 self.textbox.get(),
             )
+            self.thread_list.append(thread)
             if self.window["clear"].get():
                 self.textbox.delete(0, tkinter.END)
 

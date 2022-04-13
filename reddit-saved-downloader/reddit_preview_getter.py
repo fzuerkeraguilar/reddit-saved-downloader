@@ -1,3 +1,5 @@
+import threading
+
 import requests
 from praw.models import Submission
 import PySimpleGUI as sg
@@ -24,6 +26,10 @@ def get_reddit_preview(submission: Submission):
 
 
 def update_preview(submission: Submission, preview_image: sg.Image):
+    threading.Thread(target=__update_preview, args=(submission, preview_image)).start()
+
+
+def __update_preview(submission: Submission, preview_image: sg.Image):
     preview = get_reddit_preview(submission)
     if isinstance(preview, str):
         img = Image.new("RGB", (500, 500), color=(255, 255, 255))
