@@ -166,6 +166,9 @@ class GUI:
             if self.window["remove-after-download"].get():
                 self.bdrf_connector.get_saved_posts().pop(self.selected_post)
                 self.listbox.delete(self.selected_post)
+                if self.selected_post > self.listbox.size() - 1:
+                    self.selected_post -= 1
+                self.listbox.select_set(self.selected_post)
 
 
 if __name__ == "__main__":
